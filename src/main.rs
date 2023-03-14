@@ -25,8 +25,6 @@ fn main() -> Result<(), io::Error> {
                 fs::File::open(path).expect("Incorrect path").read_to_end(&mut buffer).expect("Buffer overflow");
                 
                 io::copy(&mut file, &mut stream).expect("couldn't send file");
-            } else {
-                panic!("Couldn't read path.txt")
             }
         } else if http_request[0].contains("POST") {
             for line in http_request {
