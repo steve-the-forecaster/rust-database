@@ -1,7 +1,7 @@
 use std::{io::{BufRead, Read, self, Write}, fs};
 
 fn main() -> Result<(), io::Error> {
-    // Anonymous address for now
+    // loopback address for now
     let listener = std::net::TcpListener::bind("127.0.0.1:7878").unwrap();
 
     for stream in listener.incoming() {
@@ -15,23 +15,23 @@ fn main() -> Result<(), io::Error> {
             .collect();
             
         println!("Request {:?}", http_request);
+        
+        // No checks for validity yet since this isn't deployed
+        // Will probably implement some hash verification but for now its not important
         if http_request[0].contains("GET") {
+            // Checks if we can open the file
             if let Ok(mut file) = fs::File::open(std::path::Path::new(&String::from("path.txt"))) {
                 let mut path = String::new();
                 
-                file.read_to_string(&mut path).expect("path.txt didn't have a valid path");
-                
-                let mut buffer = vec![0; fs::metadata(path.clone()).expect("Couldn't create buffer").len() as usize];
-                fs::File::open(path).expect("Incorrect path").read_to_end(&mut buffer).expect("Buffer overflow");
-                
-                io::copy(&mut file, &mut stream).expect("couldn't send file");
+                // Checks if the read action was successful
+                if let Ok(_) = file.read_to_string(&mut path) {
+                    io::copy(&mut fs::File::open(path).unwrap(), &mut stream).expect("couldn't send file");
+                }
             }
         } else if http_request[0].contains("POST") {
             for line in http_request {
                 if line.starts_with("User") {
-                    let mut database = fs::File::open("database.json").expect("Couldn't open the data file");
-                    
-                    database.write(&[0]).expect("Couldn't write to the file");
+                    fs::File::open("database.json").unwrap().write(&line.into_bytes()).expect("Couldn't write to the file");
                 }
             }
         }
